@@ -1,0 +1,24 @@
+sudo: required
+service:
+  - docker
+
+before_install:
+  - docker build -t alexp/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+# -- -- coverage is to exit the test after running
+# -e CI=true is to exit the test after running
+  - docker run -e CI=true alexp/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t alexp/multi-client ./client
+  - docker build -t alexp/multi-nginx ./nginx
+  - docker build -t alexp/multi-server ./server
+  - docker build -t alexp/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push alexp/multi-client
+  - docker push alexp/multi-nginx
+  - docker push alexp/multi-server
+  - docker push alexp/multi-worker
